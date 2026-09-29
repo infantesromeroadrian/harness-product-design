@@ -728,7 +728,7 @@ class Runtime:
             r.status, r.reason = ("ok" if changed else "skipped"), why
             r.action = "removed" if changed else "kept"
             changes += int(changed)
-            if why in ("removed", "restored", "already_absent", "not_written"):
+            if why in ("removed", "removed_partial", "restored", "already_absent", "not_written"):
                 del state["entries"][c.capability_id]
         self._finalize_merges(state)
         self._finish_uninstall(state)
@@ -739,8 +739,16 @@ class Runtime:
             return self._remove_merge(c, state)
         if c.mode == "projection" and "sha" not in ent:
             # el apply se corto antes de terminar esta escritura: no hay nada instalado que retirar
-            if ent.get("origin") == "backup" and not (c.dest.exists() or c.dest.is_symlink()):
+            exists = c.dest.exists() or c.dest.is_symlink()
+            if ent.get("origin") == "backup" and not exists:
                 self._restore(c, self.cfg / ent["backup"])
+            elif ent.get("origin") == "absent" and exists and self._dest_confined(c.dest):
+                # no existia antes: lo que haya es una copia parcial nuestra
+                if c.dest.is_dir() and not c.dest.is_symlink():
+                    shutil.rmtree(c.dest)
+                else:
+                    c.dest.unlink()
+                return True, "removed_partial"
             return False, "not_written"
         if c.mode == "link":
             if c.dest.is_symlink():

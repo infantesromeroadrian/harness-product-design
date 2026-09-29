@@ -306,6 +306,24 @@ PY
 check "H: hay backup previo del settings.json conservado" bash -c "ls '$hh'/.claude-product-design/backups/uninstall-*/config/settings.json"
 check "H: lo intacto (claude-design) si se retiro" test ! -e "$hh/.local/bin/claude-design"
 
+# ============================================================== I: copia parcial de una skill
+echo "== I: copia de directorio interrumpida a mitad"
+I="$tmp_base/I"; make_fixture "$I" core; hi="$I/home"
+mkdir -p "$I/repo/harness-src/skills/wcag-audit"
+printf 'a\n' >"$I/repo/harness-src/skills/wcag-audit/SKILL.md"
+printf 'b\n' >"$I/repo/harness-src/skills/wcag-audit/zz-sin-permiso.md"
+chmod 000 "$I/repo/harness-src/skills/wcag-audit/zz-sin-permiso.md"
+snap "$hi" >"$I/s0.json"
+run "$I" --apply
+check "I: apply falla con JSON de error y exit 2" test "$rc" = 2 -a "$(jget "$I/out.json" '"error" in d')" = True
+check "I: quedo un directorio parcial de la skill" test -d "$hi/.claude-product-design/skills/wcag-audit"
+run "$I" --uninstall
+check "I: uninstall -> exit 0 y reporta removed_partial" test "$rc" = 0 -a "$(jget "$I/out.json" 'sum(1 for e in d["entries"] if e.get("reason")=="removed_partial")')" = 1
+chmod 644 "$I/repo/harness-src/skills/wcag-audit/zz-sin-permiso.md"
+drop_backups "$hi"
+snap "$hi" >"$I/s3.json"
+same_snapshot "I: uninstall deja el HOME como estaba" "$I/s0.json" "$I/s3.json"
+
 # ============================================================== nada fuera de la raiz temporal
 snap --mtime "${real_paths[@]}" >"$tmp_base/real-after.json"
 snap --mtime "$repo_root/catalog" "$repo_root/schemas" "$repo_root/tooling" >"$tmp_base/repo-after.json"
