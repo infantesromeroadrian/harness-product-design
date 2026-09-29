@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse(Write|Edit|MultiEdit): bloquea (exit 2) contenido con secretos evidentes.
-# Señales: prefijos de token conocidos, claves privadas, JWT y valores largos de alta entropía
+# Señales: prefijos de token conocidos, claves privadas, JWT y valores largos (>= 32) de alta entropía
 # asignados a una clave tipo secret/token/password/api_key. No bloquea tokens de diseño
 # (`color.background.primary`), colores hex ni `var(--x)`. Los .env de ejemplo se omiten.
 # Requiere python3 o jq; con entrada ilegible bloquea (ver lib-json.sh).
@@ -35,15 +35,17 @@ TOKENS+='|figd_[A-Za-z0-9_-]{30,}|glpat-[A-Za-z0-9_-]{20}'
 grep -Eq "($TOKENS)" <<<"$CONTENT" && block "token de servicio conocido"
 
 # 2. Asignación a una clave sensible de un valor largo y de alta entropía
-ASSIGN='(api[_-]?key|secret|token|passw(or)?d)[A-Za-z0-9_]*["'\'']?[[:space:]]*[:=][[:space:]]*["'\''][^"'\'']{20,}["'\'']'
+ASSIGN='(api[_-]?key|secret|token|passw(or)?d)[A-Za-z0-9_]*["'\'']?[[:space:]]*[:=][[:space:]]*["'\''][^"'\'']{32,}["'\'']'
 VALUE_RE='[:=][[:space:]]*["'\'']([^"'\'']+)["'\'']$'
-DESIGN_PATH_RE='^[a-z]+(\.[a-z0-9-]+)+$'
+DESIGN_PATH_RE='^[A-Za-z]+(\.[A-Za-z0-9-]+)+$'
+IDENT_RE='^([A-Z][a-z]+|[a-z]+)+[0-9]*$'
+FIGMA_ID_RE='^VariableID:[0-9]+:[0-9]+$'
 HEX_RE='^#[0-9a-fA-F]{3,8}$'
 while IFS= read -r line; do
   [[ $line =~ $VALUE_RE ]] || continue
   v="${BASH_REMATCH[1]}"
-  ((${#v} >= 20)) || continue
-  [[ $v =~ $DESIGN_PATH_RE || $v =~ $HEX_RE ]] && continue
+  ((${#v} >= 32)) || continue
+  [[ $v =~ $DESIGN_PATH_RE || $v =~ $HEX_RE || $v =~ $IDENT_RE || $v =~ $FIGMA_ID_RE ]] && continue
   # shellcheck disable=SC2016
   [[ $v == var\(--* || $v == *'${'* || $v == '$'* || $v == *'<'* ]] && continue
   shopt -s nocasematch
@@ -52,7 +54,12 @@ while IFS= read -r line; do
     continue
   fi
   shopt -u nocasematch
-  # Alta entropía: mezcla de minúsculas, mayúsculas y dígitos
-  [[ $v =~ [a-z] && $v =~ [A-Z] && $v =~ [0-9] ]] && block "credencial literal asignada"
+  # Alta entropía: al menos 3 clases de carácter (minúscula, mayúscula, dígito, símbolo)
+  classes=0
+  [[ $v =~ [a-z] ]] && classes=$((classes + 1))
+  [[ $v =~ [A-Z] ]] && classes=$((classes + 1))
+  [[ $v =~ [0-9] ]] && classes=$((classes + 1))
+  [[ $v =~ [^A-Za-z0-9] ]] && classes=$((classes + 1))
+  ((classes >= 3)) && block "credencial literal asignada"
 done < <(grep -Eio "$ASSIGN" <<<"$CONTENT")
 exit 0

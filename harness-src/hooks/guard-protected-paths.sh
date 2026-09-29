@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse(Bash): exit 2 si el comando escribe, borra o mueve dentro de rutas protegidas:
-# ~/.claude, ~/.codex, ~/.agents/skills y las de DESIGN_PROTECTED_PATHS (lista separada por ':',
+# ~/.claude, ~/.claude.json, ~/.codex, ~/.agents/skills y las de DESIGN_PROTECTED_PATHS (lista separada por ':',
 # p. ej. las de permissions.deny).
 #
 # Cómo decide: divide el comando en segmentos (&&, ||, ;, |, saltos de línea, subshells), rastrea el
@@ -22,7 +22,7 @@ hook_require_json "$INPUT"
 CMD=$(hook_field "$INPUT" command)
 [[ -z "$CMD" ]] && exit 0
 
-PROTECTED=("$HOME/.claude" "$HOME/.codex" "$HOME/.agents/skills")
+PROTECTED=("$HOME/.claude" "$HOME/.codex" "$HOME/.agents/skills" "$HOME/.claude.json")
 if [[ -n "${DESIGN_PROTECTED_PATHS:-}" ]]; then
   IFS=':' read -ra EXTRA <<<"$DESIGN_PROTECTED_PATHS"
   for p in "${EXTRA[@]}"; do
@@ -168,9 +168,20 @@ while IFS= read -r seg; do
       CWD="$INITIAL_CWD"
       continue
       ;;
-    rm | rmdir | unlink | shred | mv)
+    rm | rmdir | unlink | shred)
       ((${#nonopt[@]})) && check_targets "$CWD" "$verb" ancestor "${nonopt[@]}"
-      [[ -n $tdir ]] && check_targets "$CWD" "$verb" "" "$tdir"
+      ;;
+    mv)
+      # Orígenes: se borran (también si contienen una ruta protegida). Destino: solo si cae dentro de una.
+      if [[ -n $tdir ]]; then
+        ((${#nonopt[@]})) && check_targets "$CWD" "$verb" ancestor "${nonopt[@]}"
+        check_targets "$CWD" "$verb" "" "$tdir"
+      elif ((${#nonopt[@]} >= 2)); then
+        check_targets "$CWD" "$verb" ancestor "${nonopt[@]:0:$((${#nonopt[@]} - 1))}"
+        check_targets "$CWD" "$verb" "" "${nonopt[${#nonopt[@]} - 1]}"
+      elif ((${#nonopt[@]} == 1)); then
+        check_targets "$CWD" "$verb" ancestor "${nonopt[0]}"
+      fi
       ;;
     touch | mkdir | truncate | chmod | chown | chgrp | tee)
       ((${#nonopt[@]})) && check_targets "$CWD" "$verb" "" "${nonopt[@]}"
@@ -227,7 +238,7 @@ while IFS= read -r seg; do
       norm="${norm//\~\//$HOME/}"
       if [[ $norm =~ $MUT_ANY ]]; then
         for p in "${PROTECTED[@]}"; do
-          if [[ $norm == *"$p"* ]] || in_protected "$CWD"; then
+          if [[ $norm == *"$p"/* || $norm == *"$p "* || $norm == *"$p" ]] || in_protected "$CWD"; then
             deny "'$verb' con una operación de escritura que afecta a una ruta protegida" "${HIT:-$p}"
           fi
         done

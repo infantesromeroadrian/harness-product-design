@@ -7,6 +7,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib-json.sh"
 
 INPUT=$(cat)
+hook_require_json "$INPUT"
 CMD=$(hook_field "$INPUT" command)
 [[ -z "$CMD" ]] && exit 0
 

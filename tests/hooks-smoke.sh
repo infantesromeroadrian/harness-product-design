@@ -34,7 +34,7 @@ K1="AK""IAABCDEFGHIJKLMNOP"
 t ds-aws 2 detect-secrets.sh "$(wj a.md "clave $K1")"
 K2="gh""p_$(printf 'a%.0s' {1..36})"
 t ds-gh 2 detect-secrets.sh "$(wj a.md "$K2")"
-V="api""_key"; Q="aB3dEf6hIj9kLm2nOp5qRs8tUv"
+V="api""_key"; Q="aB3dEf6hIj9kLm2nOp5qRs8tUv1WxYz4"
 t ds-assign 2 detect-secrets.sh "$(wj a.js "const $V = \"$Q\"")"
 t ds-env-ok 0 detect-secrets.sh "$(wj a.js "const $V = process.env.API_KEY")"
 t ds-example 0 detect-secrets.sh "$(wj .env.example "X=$K1")"
@@ -71,11 +71,34 @@ t gp-cp-write 2 guard-protected-paths.sh "$(bj "cp ./x.md ~/.claude/agents/")"
 t gp-cp-t 2 guard-protected-paths.sh "$(bj "cp -t ~/.claude/agents a.md")"
 t gp-2redir 0 guard-protected-paths.sh "$(bj "ls ~/.claude 2>&1")"
 t gp-git-ok 0 guard-protected-paths.sh "$(bj "git status && git diff")"
+# mv: ancestor solo en orígenes
+t gp-mv-home-dest 0 guard-protected-paths.sh "$(bj "mv ~/Downloads/logo.svg ~/")"
+(cd ~ && t gp-mv-dot 0 guard-protected-paths.sh "$(bj "mv x .")"; t gp-mv-dot-src 2 guard-protected-paths.sh "$(bj "mv .claude x")"; echo "$pass $fail" >"${TMPDIR:-/tmp}/hs.$$")
+read -r pass fail <"${TMPDIR:-/tmp}/hs.$$"; rm -f "${TMPDIR:-/tmp}/hs.$$"
+t gp-mv-src-parent 2 guard-protected-paths.sh "$(bj "mv ~/.agents ~/old-agents")"
+t gp-mv-src-inside 2 guard-protected-paths.sh "$(bj "mv ~/.claude/agents/x.md /tmp/")"
+t gp-mv-dest-inside 2 guard-protected-paths.sh "$(bj "mv a.md ~/.claude/agents/")"
+t gp-mv-t 2 guard-protected-paths.sh "$(bj "mv -t ~/.codex a.md")"
+# ~/.claude.json: escribir no, leer sí
+t gp-cj-write 2 guard-protected-paths.sh "$(bj "echo '{}' > ~/.claude.json")"
+t gp-cj-sed 2 guard-protected-paths.sh "$(bj "sed -i '' s/a/b/ ~/.claude.json")"
+t gp-cj-cp 2 guard-protected-paths.sh "$(bj "cp x.json ~/.claude.json")"
+t gp-cj-read 0 guard-protected-paths.sh "$(bj "cat ~/.claude.json | python3 -m json.tool")"
+t gp-cj-cp-read 0 guard-protected-paths.sh "$(bj "cp ~/.claude.json ./backup.json")"
+t gp-cj-other 0 guard-protected-paths.sh "$(bj "touch ~/.claude.json.bak")"
+t gp-bashc-own 0 guard-protected-paths.sh "$(bj "bash -c 'touch ~/.claude-product-design/x'")"
+# tokens de diseño y Figma
+t ds-camel 0 detect-secrets.sh "$(wj a.ts "${T}Name = \"colorBrandPrimary500\"")"
+t ds-path-upper 0 detect-secrets.sh "$(wj a.json "{\"$T\": \"color.brand.Primary.500\"}")"
+t ds-figma 0 detect-secrets.sh "$(wj a.ts "${T}Id = \"VariableID:1234:5678\"")"
+t ds-camel-long 0 detect-secrets.sh "$(wj a.ts "${T}Name = \"semanticColorBackgroundSurfaceDefaultHover500\"")"
+t ds-short-mixed 0 detect-secrets.sh "$(wj a.js "$V = \"aB3dEf6hIj9kLm2nOp5qRs8t\"")"
+t ds-symbols 2 detect-secrets.sh "$(wj a.js "$V = \"aB3d-Ef6h_Ij9k+Lm2nOp5qRs8tUv1Wx/Yz4\"")"
 # lib-json
 t lj-badjson 2 guard-protected-paths.sh 'no es json {'
 t lj-badjson2 2 detect-secrets.sh '{"tool_input": '
 t lj-nonempty-none 0 block-dangerous.sh ''
-PATH_BAK="$PATH"
+t lj-bd-badjson 2 block-dangerous.sh 'no es json {'
 t lj-nopy-jq 0 guard-protected-paths.sh "$(bj "ls")"
 echo "pass=$pass fail=$fail"
 [ "$fail" -eq 0 ] || exit 1

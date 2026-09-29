@@ -30,7 +30,9 @@
       "Edit(~/.codex/**)",
       "Write(~/.codex/**)",
       "Edit(~/.agents/skills/**)",
-      "Write(~/.agents/skills/**)"
+      "Write(~/.agents/skills/**)",
+      "Edit(~/.claude.json)",
+      "Write(~/.claude.json)"
     ]
   },
   "hooks": {
