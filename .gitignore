@@ -1,0 +1,19 @@
+# Nunca en Git: credenciales, sesiones, historial y estado del runtime
+.credentials.json
+.claude.json
+*.credentials*
+auth.json
+.env
+.env.*
+*.pem
+*.key
+sessions/
+projects/
+history*
+todos/
+statsig/
+shell-snapshots/
+state/
+backups/
+*.log
+.DS_Store
