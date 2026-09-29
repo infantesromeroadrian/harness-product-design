@@ -1,0 +1,34 @@
+{
+  "_doc": {
+    "context7": "Opcional. Define CONTEXT7_API_KEY en tu entorno (nunca en este fichero); sin clave, el instalador puede omitir este servidor.",
+    "obsidian": "Opcional. Solo se instala si DESIGN_VAULT apunta a la ruta de tu vault (export DESIGN_VAULT=/ruta/al/vault). El instalador sustituye el placeholder; sin DESIGN_VAULT se omite.",
+    "figma": "Servidor remoto oficial con OAuth: se autoriza con /mcp en el primer uso."
+  },
+  "mcpServers": {
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83"],
+      "env": {}
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@4.1.1"],
+      "env": { "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}" },
+      "optional": true
+    },
+    "obsidian": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@mauricio.wolff/mcp-obsidian@0.8.2", "${DESIGN_VAULT}"],
+      "env": {},
+      "optional": true,
+      "requires_env": "DESIGN_VAULT"
+    }
+  }
+}

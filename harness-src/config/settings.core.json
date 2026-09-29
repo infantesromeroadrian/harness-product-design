@@ -1,0 +1,65 @@
+{
+  "env": {
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "3"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Agent(*)",
+      "Skill(*)",
+      "TodoWrite(*)",
+      "mcp__figma__*",
+      "mcp__playwright__*",
+      "mcp__context7__*",
+      "mcp__obsidian__*"
+    ],
+    "deny": [
+      "Edit(~/.claude/**)",
+      "Write(~/.claude/**)",
+      "Edit(~/.codex/**)",
+      "Write(~/.codex/**)",
+      "Edit(~/.agents/skills/**)",
+      "Write(~/.agents/skills/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude-product-design/hooks/block-dangerous.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude-product-design/hooks/guard-protected-paths.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude-product-design/hooks/detect-secrets.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

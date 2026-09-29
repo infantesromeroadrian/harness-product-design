@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# claude-design: lanza Claude Code con el directorio de configuración del harness de diseño.
+set -euo pipefail
+
+if [[ "${1:-}" == "--design-help" ]]; then
+  cat <<'H'
+claude-design [args de claude...]
+  Lanza `claude` con CLAUDE_CONFIG_DIR=~/.claude-product-design.
+  CLAUDE_DESIGN_CONFIG_DIR       directorio de configuración alternativo
+  CLAUDE_DESIGN_USE_API_KEY=1    conserva ANTHROPIC_API_KEY (por defecto se descarta
+                                 para usar la suscripción)
+  --design-help                  esta ayuda
+H
+  exit 0
+fi
+
+if [[ "${CLAUDE_DESIGN_USE_API_KEY:-0}" != "1" ]]; then
+  unset ANTHROPIC_API_KEY
+fi
+
+exec env CLAUDE_CONFIG_DIR="${CLAUDE_DESIGN_CONFIG_DIR:-$HOME/.claude-product-design}" claude "$@"

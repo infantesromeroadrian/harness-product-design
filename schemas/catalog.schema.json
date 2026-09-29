@@ -1,0 +1,406 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/infantesromeroadrian/harness-product-design/schemas/catalog.schema.json",
+  "title": "Harness Product Design catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "runtime",
+    "components"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "runtime": {
+      "const": "claude-code-product-design"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    }
+  },
+  "$defs": {
+    "home_path": {
+      "type": "string",
+      "pattern": "^~/[^\\x00]+$",
+      "not": {
+        "pattern": "(^|/)\\.\\.(/|$)"
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_id",
+        "destination",
+        "activation"
+      ],
+      "properties": {
+        "capability_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]+$"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^harness-src/",
+          "not": {
+            "pattern": "(^|/)\\.\\.(/|$)"
+          }
+        },
+        "external_source": {
+          "$ref": "#/$defs/home_path"
+        },
+        "expected_kind": {
+          "enum": [
+            "file",
+            "dir"
+          ]
+        },
+        "destination": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "surface",
+            "mode",
+            "path"
+          ],
+          "properties": {
+            "surface": {
+              "enum": [
+                "guidance",
+                "config",
+                "mcp",
+                "bin",
+                "hooks",
+                "agents",
+                "skills"
+              ]
+            },
+            "mode": {
+              "enum": [
+                "projection",
+                "merge",
+                "link"
+              ]
+            },
+            "path": {
+              "$ref": "#/$defs/home_path"
+            },
+            "file_mode": {
+              "type": "string",
+              "pattern": "^0[0-7]{3}$"
+            },
+            "owned_keys": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[^.\\s]+(\\.[^.\\s]+)*$"
+              }
+            },
+            "strategy": {
+              "enum": [
+                "replace",
+                "extend"
+              ],
+              "default": "replace"
+            },
+            "protected_paths_key": {
+              "type": "string",
+              "pattern": "^[^.\\s]+(\\.[^.\\s]+)*$"
+            }
+          }
+        },
+        "activation": {
+          "enum": [
+            "active",
+            "disabled",
+            "planned"
+          ]
+        },
+        "agent": {
+          "$ref": "#/$defs/agent"
+        },
+        "profile": {
+          "enum": [
+            "core",
+            "arca"
+          ],
+          "default": "core"
+        },
+        "replaces": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]+$"
+        },
+        "append_sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^harness-src/",
+            "not": {
+              "pattern": "(^|/)\\.\\.(/|$)"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "destination": {
+                "properties": {
+                  "mode": {
+                    "const": "projection"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "source"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "external_source"
+                  ]
+                },
+                {
+                  "required": [
+                    "expected_kind"
+                  ]
+                }
+              ]
+            },
+            "properties": {
+              "destination": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "owned_keys"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "strategy"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "protected_paths_key"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "destination": {
+                "properties": {
+                  "mode": {
+                    "const": "merge"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "source"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "external_source"
+                  ]
+                },
+                {
+                  "required": [
+                    "expected_kind"
+                  ]
+                },
+                {
+                  "required": [
+                    "append_sources"
+                  ]
+                }
+              ]
+            },
+            "properties": {
+              "destination": {
+                "required": [
+                  "owned_keys"
+                ],
+                "not": {
+                  "required": [
+                    "file_mode"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "destination": {
+                "properties": {
+                  "mode": {
+                    "const": "link"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "external_source",
+              "expected_kind",
+              "profile"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "source"
+                  ]
+                },
+                {
+                  "required": [
+                    "append_sources"
+                  ]
+                }
+              ]
+            },
+            "properties": {
+              "destination": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "owned_keys"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "file_mode"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "strategy"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "protected_paths_key"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "profile": {
+                "const": "arca"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "destination": {
+                "properties": {
+                  "surface": {
+                    "const": "agents"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "agent"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "agent"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "model",
+        "effort"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "gate",
+            "architecture",
+            "implementation",
+            "coordination"
+          ]
+        },
+        "model": {
+          "enum": [
+            "opus",
+            "sonnet",
+            "haiku"
+          ]
+        },
+        "effort": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        },
+        "accepted_deviations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "Bash",
+              "Write",
+              "Edit",
+              "NotebookEdit"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

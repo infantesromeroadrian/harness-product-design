@@ -1,0 +1,574 @@
+{
+  "$schema": "../schemas/catalog.schema.json",
+  "schema_version": 1,
+  "runtime": "claude-code-product-design",
+  "components": [
+    {
+      "capability_id": "guidance.claude-md",
+      "description": "Identidad autocontenida del harness (capa de especialista); sin dependencias de una instalacion ARCA",
+      "profile": "core",
+      "source": "harness-src/guidance/CLAUDE.core.md",
+      "destination": {
+        "surface": "guidance",
+        "mode": "projection",
+        "path": "~/.claude-product-design/CLAUDE.md"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "guidance.claude-md-arca",
+      "description": "Variante ARCA: CLAUDE.arca.md (import del nucleo + runtime) seguido de la capa core",
+      "profile": "arca",
+      "replaces": "guidance.claude-md",
+      "source": "harness-src/guidance/CLAUDE.arca.md",
+      "append_sources": [
+        "harness-src/guidance/CLAUDE.core.md"
+      ],
+      "destination": {
+        "surface": "guidance",
+        "mode": "projection",
+        "path": "~/.claude-product-design/CLAUDE.md"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "bin.claude-design",
+      "description": "Comando que arranca Claude Code con el directorio de configuracion propio",
+      "profile": "core",
+      "source": "harness-src/bin/claude-design",
+      "destination": {
+        "surface": "bin",
+        "mode": "projection",
+        "path": "~/.local/bin/claude-design",
+        "file_mode": "0755"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.guard-protected-paths",
+      "description": "Bloquea escrituras via Bash en rutas protegidas",
+      "profile": "core",
+      "source": "harness-src/hooks/guard-protected-paths.sh",
+      "destination": {
+        "surface": "hooks",
+        "mode": "projection",
+        "path": "~/.claude-product-design/hooks/guard-protected-paths.sh",
+        "file_mode": "0755"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.lib-json",
+      "description": "Utilidad compartida por los hooks (lectura de tool_input)",
+      "profile": "core",
+      "source": "harness-src/hooks/lib-json.sh",
+      "destination": {
+        "surface": "hooks",
+        "mode": "projection",
+        "path": "~/.claude-product-design/hooks/lib-json.sh",
+        "file_mode": "0755"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.block-dangerous",
+      "description": "Bloquea comandos destructivos (version portable)",
+      "profile": "core",
+      "source": "harness-src/hooks/block-dangerous.sh",
+      "destination": {
+        "surface": "hooks",
+        "mode": "projection",
+        "path": "~/.claude-product-design/hooks/block-dangerous.sh",
+        "file_mode": "0755"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.detect-secrets",
+      "description": "Bloquea secretos en el contenido escrito (version portable)",
+      "profile": "core",
+      "source": "harness-src/hooks/detect-secrets.sh",
+      "destination": {
+        "surface": "hooks",
+        "mode": "projection",
+        "path": "~/.claude-product-design/hooks/detect-secrets.sh",
+        "file_mode": "0755"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "config.settings",
+      "profile": "core",
+      "source": "harness-src/config/settings.core.json",
+      "destination": {
+        "surface": "config",
+        "mode": "merge",
+        "path": "~/.claude-product-design/settings.json",
+        "owned_keys": [
+          "env.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS",
+          "permissions.deny",
+          "hooks",
+          "skipDangerousModePermissionPrompt",
+          "permissions.defaultMode",
+          "permissions.allow"
+        ]
+      },
+      "activation": "active",
+      "description": "Base portable: subagentes, deny de rutas protegidas, hooks de seguridad"
+    },
+    {
+      "capability_id": "config.settings-arca",
+      "description": "Capa ARCA: deny de los harness hermanos y hooks de ARCA (extiende la base)",
+      "profile": "arca",
+      "source": "harness-src/config/settings.arca.json",
+      "destination": {
+        "surface": "config",
+        "mode": "merge",
+        "path": "~/.claude-product-design/settings.json",
+        "owned_keys": [
+          "permissions.deny",
+          "hooks",
+          "env.DESIGN_PROTECTED_PATHS"
+        ],
+        "strategy": "extend",
+        "protected_paths_key": "env.DESIGN_PROTECTED_PATHS"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "mcp.bundle",
+      "profile": "core",
+      "source": "harness-src/mcp/mcp.core.json",
+      "destination": {
+        "surface": "mcp",
+        "mode": "merge",
+        "path": "~/.claude-product-design/.claude.json",
+        "owned_keys": [
+          "mcpServers.obsidian",
+          "mcpServers.playwright",
+          "mcpServers.context7",
+          "mcpServers.figma"
+        ]
+      },
+      "activation": "active",
+      "description": "MCP portables; obsidian y context7 solo si sus variables de entorno estan definidas al instalar"
+    },
+    {
+      "capability_id": "mcp.arca",
+      "description": "Capa ARCA: obsidian sobre el vault local y engram",
+      "profile": "arca",
+      "source": "harness-src/mcp/mcp.arca.json",
+      "destination": {
+        "surface": "mcp",
+        "mode": "merge",
+        "path": "~/.claude-product-design/.claude.json",
+        "owned_keys": [
+          "mcpServers.obsidian",
+          "mcpServers.engram"
+        ],
+        "strategy": "replace"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.link.block-dangerous",
+      "profile": "arca",
+      "replaces": "hooks.block-dangerous",
+      "external_source": "~/.claude/hooks/block-dangerous.sh",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "hooks",
+        "mode": "link",
+        "path": "~/.claude-product-design/hooks/block-dangerous.sh"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.link.prompt-injection-check",
+      "profile": "arca",
+      "external_source": "~/.claude/hooks/prompt_injection_check.sh",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "hooks",
+        "mode": "link",
+        "path": "~/.claude-product-design/hooks/prompt_injection_check.sh"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.link.detect-secrets",
+      "profile": "arca",
+      "replaces": "hooks.detect-secrets",
+      "external_source": "~/.claude/hooks/detect-secrets.sh",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "hooks",
+        "mode": "link",
+        "path": "~/.claude-product-design/hooks/detect-secrets.sh"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "hooks.link.panel-summary",
+      "profile": "arca",
+      "external_source": "~/.claude/hooks/panel-summary.sh",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "hooks",
+        "mode": "link",
+        "path": "~/.claude-product-design/hooks/panel-summary.sh"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "agents.link.frontend-ai",
+      "profile": "arca",
+      "external_source": "~/.claude/agents/frontend-ai.md",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "agents",
+        "mode": "link",
+        "path": "~/.claude-product-design/agents/frontend-ai.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "implementation",
+        "model": "sonnet",
+        "effort": "medium"
+      }
+    },
+    {
+      "capability_id": "agents.link.project-planner",
+      "profile": "arca",
+      "external_source": "~/.claude/agents/project-planner.md",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "agents",
+        "mode": "link",
+        "path": "~/.claude-product-design/agents/project-planner.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "coordination",
+        "model": "opus",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.link.git-master",
+      "profile": "arca",
+      "external_source": "~/.claude/agents/git-master.md",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "agents",
+        "mode": "link",
+        "path": "~/.claude-product-design/agents/git-master.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "coordination",
+        "model": "opus",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.link.evidence-researcher",
+      "profile": "arca",
+      "external_source": "~/.claude/agents/evidence-researcher.md",
+      "expected_kind": "file",
+      "destination": {
+        "surface": "agents",
+        "mode": "link",
+        "path": "~/.claude-product-design/agents/evidence-researcher.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "gate",
+        "model": "opus",
+        "effort": "high",
+        "accepted_deviations": [
+          "Bash"
+        ]
+      }
+    },
+    {
+      "capability_id": "skills.link.emil-design-eng",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/emil-design-eng",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/emil-design-eng"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.design-motion-principles",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/design-motion-principles",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/design-motion-principles"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.requirements-engineering",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/requirements-engineering",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/requirements-engineering"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.clarify",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/clarify",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/clarify"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.obsidian-cli",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/obsidian-cli",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/obsidian-cli"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.archify",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/archify",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/archify"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.pocock-prototype",
+      "profile": "arca",
+      "external_source": "~/.claude/skills/pocock-prototype",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/pocock-prototype"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.architecture-docs",
+      "description": "En ~/.claude/skills es un symlink; se enlaza al destino real",
+      "profile": "arca",
+      "external_source": "~/.agents/skills/architecture-docs",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/architecture-docs"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.source-discovery",
+      "description": "En ~/.claude/skills es un symlink; se enlaza al destino real",
+      "profile": "arca",
+      "external_source": "~/.agents/skills/source-discovery",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/source-discovery"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.link.adrian-code-signature",
+      "description": "En ~/.claude/skills es un symlink; se enlaza al destino real",
+      "profile": "arca",
+      "external_source": "~/.agents/skills/adrian-code-signature",
+      "expected_kind": "dir",
+      "destination": {
+        "surface": "skills",
+        "mode": "link",
+        "path": "~/.claude-product-design/skills/adrian-code-signature"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "agents.own.ux-researcher",
+      "profile": "core",
+      "source": "harness-src/agents/ux-researcher.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/ux-researcher.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "implementation",
+        "model": "sonnet",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.own.product-strategist",
+      "profile": "core",
+      "source": "harness-src/agents/product-strategist.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/product-strategist.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "architecture",
+        "model": "opus",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.own.design-system-architect",
+      "profile": "core",
+      "source": "harness-src/agents/design-system-architect.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/design-system-architect.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "architecture",
+        "model": "opus",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.own.ui-designer",
+      "profile": "core",
+      "source": "harness-src/agents/ui-designer.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/ui-designer.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "implementation",
+        "model": "sonnet",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.own.prototype-engineer",
+      "profile": "core",
+      "source": "harness-src/agents/prototype-engineer.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/prototype-engineer.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "implementation",
+        "model": "sonnet",
+        "effort": "medium"
+      }
+    },
+    {
+      "capability_id": "agents.own.accessibility-auditor",
+      "profile": "core",
+      "source": "harness-src/agents/accessibility-auditor.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/accessibility-auditor.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "gate",
+        "model": "opus",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "agents.own.design-critic",
+      "profile": "core",
+      "source": "harness-src/agents/design-critic.md",
+      "destination": {
+        "surface": "agents",
+        "mode": "projection",
+        "path": "~/.claude-product-design/agents/design-critic.md"
+      },
+      "activation": "active",
+      "agent": {
+        "role": "gate",
+        "model": "opus",
+        "effort": "high"
+      }
+    },
+    {
+      "capability_id": "skills.own.design-flow",
+      "profile": "core",
+      "source": "harness-src/skills/design-flow",
+      "destination": {
+        "surface": "skills",
+        "mode": "projection",
+        "path": "~/.claude-product-design/skills/design-flow"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.own.research-synthesis",
+      "profile": "core",
+      "source": "harness-src/skills/research-synthesis",
+      "destination": {
+        "surface": "skills",
+        "mode": "projection",
+        "path": "~/.claude-product-design/skills/research-synthesis"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.own.wcag-audit",
+      "profile": "core",
+      "source": "harness-src/skills/wcag-audit",
+      "destination": {
+        "surface": "skills",
+        "mode": "projection",
+        "path": "~/.claude-product-design/skills/wcag-audit"
+      },
+      "activation": "active"
+    },
+    {
+      "capability_id": "skills.own.design-critique",
+      "profile": "core",
+      "source": "harness-src/skills/design-critique",
+      "destination": {
+        "surface": "skills",
+        "mode": "projection",
+        "path": "~/.claude-product-design/skills/design-critique"
+      },
+      "activation": "active"
+    }
+  ]
+}

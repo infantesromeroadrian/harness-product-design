@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@mauricio.wolff/mcp-obsidian@0.8.2", "${HOME}/Documents/air-vault"],
+      "env": {}
+    },
+    "engram": {
+      "type": "stdio",
+      "command": "${HOME}/go/bin/engram",
+      "args": ["mcp"],
+      "env": {}
+    }
+  }
+}
